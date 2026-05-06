@@ -3,9 +3,12 @@ import Stripe from "stripe";
 import {
   AmplitudeClient,
   CustomerCache,
+  StripeCatalog,
   mapStripeEventToAmplitude,
 } from "@stripe-to-amplitude/core";
 import type { WebhookConfig } from "./config.js";
+
+const CATALOG_REFRESH_MS = 60 * 60 * 1000; // 1 hour
 
 export async function buildServer(cfg: WebhookConfig) {
   const app = Fastify({ logger: { level: cfg.logLevel } });
@@ -18,6 +21,7 @@ export async function buildServer(cfg: WebhookConfig) {
     maxEventsPerRequest: 1,
   });
   const cache = new CustomerCache(cfg.resolver);
+  const catalog = new StripeCatalog();
 
   app.get("/healthz", async () => ({ ok: true }));
 
@@ -67,7 +71,14 @@ export async function buildServer(cfg: WebhookConfig) {
       ? await cache.resolve(stripeCustomerId, stripe)
       : null;
 
-    const amplitudeEvent = mapStripeEventToAmplitude(event, resolved);
+    // Lazy-load the catalog on the first event, refresh once per hour after.
+    try {
+      await catalog.refreshIfStale(stripe, CATALOG_REFRESH_MS);
+    } catch (err) {
+      app.log.warn({ err }, "stripe catalog refresh failed; continuing with stale data");
+    }
+
+    const amplitudeEvent = mapStripeEventToAmplitude(event, resolved, catalog);
     if (!amplitudeEvent) {
       app.log.info({ type: event.type, eventId: event.id }, "no customer on event, skipping");
       return { ok: true, skipped: true };

@@ -11,3 +11,4 @@ secret.yaml
 coverage/
 *.tsbuildinfo
 .backfill-state/
+sample-events.json

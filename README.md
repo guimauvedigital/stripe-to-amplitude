@@ -41,12 +41,12 @@ A single `core` package owns the transformation logic. The same mapper is used b
 
 ## Event format
 
-All emitted events are named `[Stripe] <stripe.event.type>`, matching Amplitude's native Stripe integration convention so you can swap between this project and the native one without re-writing your charts.
+All emitted events are named `[Stripe v2] <stripe.event.type>`, matching Amplitude's native Stripe integration convention (with a `v2` tag so a re-run lands in a fresh, hidden-able event family alongside any prior `[Stripe] *` ingestion).
 
 ```json
 {
   "user_id": "user_uuid_resolved_from_metadata",
-  "event_type": "[Stripe] invoice.payment_succeeded",
+  "event_type": "[Stripe v2] invoice.payment_succeeded",
   "time": 1714000000000,
   "insert_id": "invoice.payment_succeeded:in_1Pxxxxx",
   "$revenue": 49.0,
@@ -69,7 +69,7 @@ All emitted events are named `[Stripe] <stripe.event.type>`, matching Amplitude'
 
 | Stripe object | Synthesized event(s) (backfill) | Source timestamp |
 |---|---|---|
-| `customer` | `[Stripe] customer.created`, `customer.deleted` | `created`, n/a (Stripe drops the timestamp on delete) |
+| `customer` | `[Stripe v2] customer.created`, `customer.deleted` | `created`, n/a (Stripe drops the timestamp on delete) |
 | `subscription` | `customer.subscription.created`, `customer.subscription.deleted`, `customer.subscription.trial_will_end` | `created`, `canceled_at`, `trial_end` |
 | `invoice` | `invoice.created`, `invoice.finalized`, `invoice.payment_succeeded`, `invoice.voided`, `invoice.marked_uncollectible` | `created`, `status_transitions.*` |
 | `charge` | `charge.succeeded` or `charge.failed` | `created` |
@@ -127,7 +127,7 @@ pnpm --filter @stripe-to-amplitude/webhook build
 pnpm webhook
 ```
 
-In Stripe Dashboard → Developers → Webhooks → "Add endpoint" → point it at `https://your-host/webhook` and copy the signing secret into `STRIPE_WEBHOOK_SECRET`. Subscribe to "Send all events" — the bridge will faithfully forward each one as `[Stripe] <type>`.
+In Stripe Dashboard → Developers → Webhooks → "Add endpoint" → point it at `https://your-host/webhook` and copy the signing secret into `STRIPE_WEBHOOK_SECRET`. Subscribe to "Send all events" — the bridge will faithfully forward each one as `[Stripe v2] <type>`.
 
 ## Deploy on Kubernetes
 

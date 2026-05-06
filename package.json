@@ -14,6 +14,7 @@
     "test": "pnpm -r test",
     "backfill": "node --env-file-if-exists=.env packages/backfill/dist/index.js",
     "find-unmatched": "node --env-file-if-exists=.env packages/backfill/dist/find-unmatched.js",
+    "dump-sample": "node --env-file-if-exists=.env packages/backfill/dist/dump-sample.js",
     "webhook": "node --env-file-if-exists=.env packages/webhook/dist/index.js",
     "docker:webhook": "docker build -f Dockerfile.webhook -t stripe-to-amplitude-webhook .",
     "docker:backfill": "docker build -f Dockerfile.backfill -t stripe-to-amplitude-backfill ."
