@@ -5,16 +5,14 @@ kind: Ingress
 metadata:
   name: stripe-to-amplitude-webhook
   namespace: default
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - stripe-amplitude.example.com
+        - stripe-amplitude.controlresell.com
       secretName: stripe-to-amplitude-tls
   rules:
-    - host: stripe-amplitude.example.com
+    - host: stripe-amplitude.controlresell.com
       http:
         paths:
           - path: /webhook
