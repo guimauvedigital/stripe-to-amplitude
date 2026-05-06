@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: stripe-to-amplitude-webhook
+  name: controlresell-staging-stripe-to-amplitude-webhook
   namespace: default
   labels:
     app.kubernetes.io/name: stripe-to-amplitude
@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
         - name: webhook
-          image: ghcr.io/YOUR_ORG/stripe-to-amplitude-webhook:latest
-          imagePullPolicy: IfNotPresent
+          image: guimauvedigital/stripe-to-amplitude-webhook:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 3000

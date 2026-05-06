@@ -1,0 +1,32 @@
+name: Release
+on:
+  release:
+    types: [ published ]
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send release to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_CR_RELEASES }}
+        run: |
+          REPO="${{ github.event.repository.name }}"
+          VERSION="${{ github.event.release.tag_name }}"
+          BODY="${{ github.event.release.body }}"
+          BODY="${BODY:0:4000}"
+
+          JSON=$(jq -n \
+            --arg repo "$REPO" \
+            --arg version "$VERSION" \
+            --arg body "$BODY" \
+            '{
+              embeds: [{
+                title: "\($repo) \($version)",
+                description: $body,
+                color: 5814783
+              }]
+            }')
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "$JSON" \
+               $DISCORD_WEBHOOK

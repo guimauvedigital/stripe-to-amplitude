@@ -24,8 +24,8 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: backfill
-          image: ghcr.io/YOUR_ORG/stripe-to-amplitude-backfill:latest
-          imagePullPolicy: IfNotPresent
+          image: guimauvedigital/stripe-to-amplitude-backfill:latest
+          imagePullPolicy: Always
           env:
             - name: USER_ID_STRATEGY
               value: "metadata.user_id"
