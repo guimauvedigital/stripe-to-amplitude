@@ -19,6 +19,7 @@ import { loadConfig } from "./config.js";
 
 const PER_ENTITY = Number.parseInt(process.env.SAMPLE_PER_ENTITY ?? "5", 10);
 const OUTPUT_PATH = process.env.SAMPLE_OUTPUT ?? "./sample-events.json";
+const RAW_OUTPUT_PATH = process.env.SAMPLE_RAW_OUTPUT ?? "./sample-raw.json";
 
 async function main(): Promise<void> {
   const cfg = loadConfig();
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
   await catalog.load(stripe);
 
   const all: AmplitudeEvent[] = [];
+  const raw: Array<{ kind: string; data: unknown }> = [];
   const ctxFor = async (
     customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined,
   ): Promise<CommonContext | null> => {
@@ -58,6 +60,7 @@ async function main(): Promise<void> {
     if (count++ >= PER_ENTITY) break;
     const resolved = cache.set(c);
     if (!resolved.amplitudeUserId) continue;
+    raw.push({ kind: "customer", data: c });
     all.push(...synthesizeFromObject({ kind: "customer", data: resolved }, catalog));
   }
 
@@ -71,6 +74,7 @@ async function main(): Promise<void> {
     if (count++ >= PER_ENTITY) break;
     const ctx = await ctxFor(s.customer);
     if (!ctx) continue;
+    raw.push({ kind: "subscription", data: s });
     all.push(...synthesizeFromObject({ kind: "subscription", data: s, ctx }, catalog));
   }
 
@@ -83,6 +87,7 @@ async function main(): Promise<void> {
     if (count++ >= PER_ENTITY) break;
     const ctx = await ctxFor(i.customer);
     if (!ctx) continue;
+    raw.push({ kind: "invoice", data: i });
     all.push(...synthesizeFromObject({ kind: "invoice", data: i, ctx }, catalog));
   }
 
@@ -95,6 +100,7 @@ async function main(): Promise<void> {
     if (count++ >= PER_ENTITY) break;
     const ctx = await ctxFor(ch.customer);
     if (!ctx) continue;
+    raw.push({ kind: "charge", data: ch });
     all.push(...synthesizeFromObject({ kind: "charge", data: ch, ctx }, catalog));
   }
 
@@ -111,6 +117,7 @@ async function main(): Promise<void> {
         : (r.charge as Stripe.Charge | null);
     const ctx = await ctxFor(charge?.customer);
     if (!ctx) continue;
+    raw.push({ kind: "refund", data: r });
     all.push(
       ...synthesizeFromObject(
         { kind: "refund", data: r, ctx, originalCharge: charge ?? null },
@@ -125,6 +132,7 @@ async function main(): Promise<void> {
     if (count++ >= PER_ENTITY) break;
     const ctx = await ctxFor(pi.customer);
     if (!ctx) continue;
+    raw.push({ kind: "payment_intent", data: pi });
     all.push(...synthesizeFromObject({ kind: "payment_intent", data: pi, ctx }, catalog));
   }
 
@@ -137,6 +145,7 @@ async function main(): Promise<void> {
     const charge = await stripe.charges.retrieve(chargeId);
     const ctx = await ctxFor(charge.customer);
     if (!ctx) continue;
+    raw.push({ kind: "dispute", data: d });
     all.push(...synthesizeFromObject({ kind: "dispute", data: d, ctx }, catalog));
   }
 
@@ -146,11 +155,14 @@ async function main(): Promise<void> {
     if (count++ >= PER_ENTITY) break;
     const ctx = await ctxFor(cn.customer);
     if (!ctx) continue;
+    raw.push({ kind: "credit_note", data: cn });
     all.push(...synthesizeFromObject({ kind: "credit_note", data: cn, ctx }, catalog));
   }
 
   await mkdir(dirname(OUTPUT_PATH), { recursive: true }).catch(() => {});
   await writeFile(OUTPUT_PATH, JSON.stringify(all, null, 2), "utf8");
+  await writeFile(RAW_OUTPUT_PATH, JSON.stringify(raw, null, 2), "utf8");
+  console.log(`[sample] wrote ${raw.length} raw Stripe responses to ${RAW_OUTPUT_PATH}`);
 
   const byType = new Map<string, number>();
   for (const ev of all) byType.set(ev.event_type, (byType.get(ev.event_type) ?? 0) + 1);

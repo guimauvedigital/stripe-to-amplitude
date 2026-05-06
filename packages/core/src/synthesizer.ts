@@ -608,35 +608,21 @@ export function synthesizeChargeEvents(
   ctx: CommonContext,
   _catalog: StripeCatalog,
 ): AmplitudeEvent[] {
-  const events: AmplitudeEvent[] = [];
   const derived = chargeDerivedFields(charge);
-
+  const eventType = `[Stripe v2] charge.${charge.status}`;
+  const ev = buildEvent(
+    eventType,
+    toMs(charge.created),
+    v2InsertId(`charge.${charge.status}`, charge.id),
+    ctx,
+    charge,
+    { derived },
+  );
   if (charge.status === "succeeded") {
-    const ev = buildEvent(
-      "[Stripe v2] charge.succeeded",
-      toMs(charge.created),
-      v2InsertId("charge.succeeded", charge.id),
-      ctx,
-      charge,
-      { derived },
-    );
     ev.$revenue = toMajorUnit(charge.amount);
     ev.$revenueType = "charge";
-    events.push(ev);
-  } else if (charge.status === "failed") {
-    events.push(
-      buildEvent(
-        "[Stripe v2] charge.failed",
-        toMs(charge.created),
-        v2InsertId("charge.failed", charge.id),
-        ctx,
-        charge,
-        { derived },
-      ),
-    );
   }
-
-  return events;
+  return [ev];
 }
 
 // ---------- Refund ----------
@@ -689,30 +675,20 @@ export function synthesizePaymentIntentEvents(
   ctx: CommonContext,
   _catalog: StripeCatalog,
 ): AmplitudeEvent[] {
+  const isFailed = pi.status === "requires_payment_method" && pi.last_payment_error;
+  const subtype = isFailed ? "payment_failed" : pi.status;
+  const ev = buildEvent(
+    `[Stripe v2] payment_intent.${subtype}`,
+    toMs(pi.created),
+    v2InsertId(`payment_intent.${subtype}`, pi.id),
+    ctx,
+    pi,
+  );
   if (pi.status === "succeeded") {
-    const ev = buildEvent(
-      "[Stripe v2] payment_intent.succeeded",
-      toMs(pi.created),
-      v2InsertId("payment_intent.succeeded", pi.id),
-      ctx,
-      pi,
-    );
     ev.$revenue = toMajorUnit(pi.amount_received);
     ev.$revenueType = "payment_intent";
-    return [ev];
   }
-  if (pi.status === "requires_payment_method" && pi.last_payment_error) {
-    return [
-      buildEvent(
-        "[Stripe v2] payment_intent.payment_failed",
-        toMs(pi.created),
-        v2InsertId("payment_intent.payment_failed", pi.id),
-        ctx,
-        pi,
-      ),
-    ];
-  }
-  return [];
+  return [ev];
 }
 
 // ---------- Dispute ----------
