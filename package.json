@@ -1,0 +1,26 @@
+{
+  "name": "stripe-to-amplitude",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source Stripe to Amplitude bridge: full historical backfill + live webhook forwarding",
+  "license": "MIT",
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "backfill": "node --env-file-if-exists=.env packages/backfill/dist/index.js",
+    "find-unmatched": "node --env-file-if-exists=.env packages/backfill/dist/find-unmatched.js",
+    "webhook": "node --env-file-if-exists=.env packages/webhook/dist/index.js",
+    "docker:webhook": "docker build -f Dockerfile.webhook -t stripe-to-amplitude-webhook .",
+    "docker:backfill": "docker build -f Dockerfile.backfill -t stripe-to-amplitude-backfill ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

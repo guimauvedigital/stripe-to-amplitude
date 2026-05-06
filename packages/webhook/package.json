@@ -1,0 +1,21 @@
+{
+  "name": "@stripe-to-amplitude/webhook",
+  "version": "0.1.0",
+  "description": "Live Stripe webhook to Amplitude HTTP V2 API forwarder",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "stripe-to-amplitude-webhook": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx --watch src/index.ts"
+  },
+  "dependencies": {
+    "@stripe-to-amplitude/core": "workspace:*",
+    "fastify": "^5.2.1",
+    "stripe": "^17.4.0"
+  }
+}

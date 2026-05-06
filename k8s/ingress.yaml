@@ -1,0 +1,33 @@
+# Optional: expose the webhook publicly so Stripe can reach it.
+# Adapt host, ingressClassName and TLS to your cluster.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stripe-to-amplitude-webhook
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - stripe-amplitude.example.com
+      secretName: stripe-to-amplitude-tls
+  rules:
+    - host: stripe-amplitude.example.com
+      http:
+        paths:
+          - path: /webhook
+            pathType: Exact
+            backend:
+              service:
+                name: stripe-to-amplitude-webhook
+                port:
+                  number: 80
+          - path: /healthz
+            pathType: Exact
+            backend:
+              service:
+                name: stripe-to-amplitude-webhook
+                port:
+                  number: 80

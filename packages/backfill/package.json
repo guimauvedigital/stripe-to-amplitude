@@ -1,0 +1,20 @@
+{
+  "name": "@stripe-to-amplitude/backfill",
+  "version": "0.1.0",
+  "description": "One-shot historical backfill of Stripe data into Amplitude",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "stripe-to-amplitude-backfill": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@stripe-to-amplitude/core": "workspace:*",
+    "stripe": "^17.4.0"
+  }
+}

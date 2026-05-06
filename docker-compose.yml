@@ -1,0 +1,22 @@
+services:
+  webhook:
+    build:
+      context: .
+      dockerfile: Dockerfile.webhook
+    env_file: .env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  # Run on demand: `docker compose run --rm backfill`
+  backfill:
+    build:
+      context: .
+      dockerfile: Dockerfile.backfill
+    env_file: .env
+    volumes:
+      - backfill-state:/state
+    profiles: ["manual"]
+
+volumes:
+  backfill-state:

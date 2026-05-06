@@ -1,0 +1,54 @@
+# One-shot backfill Job. Run it whenever you need to (re-)import history.
+# The state PVC keeps cursor positions so a re-run resumes after interruptions.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stripe-to-amplitude-backfill-state
+  namespace: default
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stripe-to-amplitude-backfill
+  namespace: default
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: backfill
+          image: ghcr.io/YOUR_ORG/stripe-to-amplitude-backfill:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: USER_ID_STRATEGY
+              value: "metadata.user_id"
+            - name: USER_ID_FALLBACK
+              value: "email,id"
+            # Set DRY_RUN=1 for a first pass without touching Amplitude.
+            - name: DRY_RUN
+              value: "0"
+            # Optional: BACKFILL_SINCE (Unix seconds), BACKFILL_ENTITIES (csv).
+          envFrom:
+            - secretRef:
+                name: stripe-to-amplitude
+          volumeMounts:
+            - mountPath: /state
+              name: state
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: stripe-to-amplitude-backfill-state

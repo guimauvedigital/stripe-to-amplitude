@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+.gitignore
+.env
+.env.*
+*.log
+README.md
+.github
+k8s
+examples
+.backfill-state
+coverage

@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1.7
+FROM node:22-alpine AS builder
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@10.18.0 --activate
+
+COPY pnpm-workspace.yaml package.json tsconfig.base.json ./
+COPY packages/core/package.json ./packages/core/
+COPY packages/webhook/package.json ./packages/webhook/
+COPY packages/backfill/package.json ./packages/backfill/
+
+RUN pnpm install --frozen-lockfile=false
+
+COPY packages/core ./packages/core
+COPY packages/webhook ./packages/webhook
+
+RUN pnpm --filter @stripe-to-amplitude/core build && \
+    pnpm --filter @stripe-to-amplitude/webhook build
+
+# ----------------- Runtime image -----------------
+FROM node:22-alpine AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN corepack enable && corepack prepare pnpm@10.18.0 --activate && \
+    addgroup -S app && adduser -S app -G app
+
+COPY --from=builder --chown=app:app /app/pnpm-workspace.yaml /app/package.json ./
+COPY --from=builder --chown=app:app /app/packages/core/package.json ./packages/core/
+COPY --from=builder --chown=app:app /app/packages/core/dist ./packages/core/dist
+COPY --from=builder --chown=app:app /app/packages/webhook/package.json ./packages/webhook/
+COPY --from=builder --chown=app:app /app/packages/webhook/dist ./packages/webhook/dist
+
+RUN pnpm install --prod --frozen-lockfile=false
+
+USER app
+EXPOSE 3000
+ENV PORT=3000 HOST=0.0.0.0
+CMD ["node", "packages/webhook/dist/index.js"]
