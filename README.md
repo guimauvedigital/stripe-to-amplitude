@@ -88,7 +88,7 @@ Stripe only retains raw events for ~30 days. For older periods, this project der
 
 ### Prerequisites
 
-- Node 20+
+- Node 22+
 - pnpm 10
 - A Stripe restricted API key with read access to: customers, subscriptions, invoices, charges, refunds, products, payment_intents, disputes, credit_notes
 - An Amplitude project API key (any plan, including Starter)
